@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /*global require, module, process, console */
 (function () {
 
@@ -6,7 +8,7 @@
     var FS = require('fs'),
         PKG = require('./package.json'),
         Commander = require('commander'),
-        Logger = require('./lib/smile/socketio_bench/logger'),
+        logger = require('./lib/smile/socketio_bench/logger'),
         Benchmark = require('./lib/smile/socketio_bench/benchmark');
 
     Commander
@@ -25,14 +27,18 @@
         workers: Commander.worker || 1,
         amounts: Commander.amount || 100,
         messages: Commander.message || 0,
-        concurrencies: Commander.concurency || 20
+        concurencies: Commander.concurency || 20
     };
 
     var server = Commander.args[0],
         service = './workers/socket.io';
 
-    Logger.head('Socket.io Benchmark v' + Commander.version());
-    var bench = new Benchmark(options, Logger);
+    logger.head('Socket.io Benchmark v' + Commander.version());
+    logger.info('Launch bench with ' + options.amounts + ' total connection, ' + options.concurencies + ' concurent connection');
+    // logger.info(program.message + ' message(s) send by client');
+    logger.info(options.workers + ' worker(s)');
+
+    var bench = new Benchmark(options, logger);
     bench.launch(server, service);
 
 }());
