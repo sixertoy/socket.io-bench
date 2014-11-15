@@ -1,8 +1,0 @@
-{
-    service: 'workers/socket.io',
-    workers: 1,
-    amounts: 100,
-    concurrency: 20,
-    host: 'localhost',
-    port: '3000'
-}

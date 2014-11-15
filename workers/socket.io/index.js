@@ -2,25 +2,83 @@
 (function () {
     'use strict';
 
-    var Worker = require('./worker');
-
-    var args = process.argv.slice(2),
-        id = args[0],
-        server = args[1],
-        worker = new Worker(server, id);
-
-    process.on('message', function (message, handle) {
-        worker.close();
-        process.send(message);
-        process.exit();
-    });
-
     process.on('SIGINT', function () {
-        worker.close();
-        process.send(JSON.stringify({action: 'cancel'}));
-        process.exit();
+        process.send(JSON.stringify({
+            action: 'cancel'
+        }));
+        process.exit(0);
     });
 
-    worker.createConnections();
+    var worker,
+        lodash = require('lodash'),
+        args = process.argv.slice(2), // index, server
+        SocketClient = require('socket.io-client');
+
+    /** -----------------------------------------------
+     *
+     *
+     * Worker class
+     * for socket.io client
+     *
+     *
+     */
+    function Worker(server, id) {
+        console.log('Process ' + process.pid + ' at work ');
+        this.id = id;
+        this.stop = null;
+        this.start = null;
+        this.server = server;
+    }
+
+    lodash.extend(Worker.prototype, {
+
+        report: function (client, err) {
+            this.stop = Date.now();
+            var msg = (err ? 'error' : 'success'),
+                message = JSON.stringify({
+                    type: msg,
+                    data: {
+                        pid: process.pid,
+                        code: (err ? err.code : 0),
+                        message: (err ? err.message : 'OK'),
+                        time: (this.stop - this.start)
+                    }
+                });
+            if (client) {
+                client.disconnect();
+            }
+            process.send(message);
+        }
+
+    });
+
+    Worker.prototype.createConnection = function () {
+        this.start = Date.now();
+        // no auto reconnect
+        // @see http://socket.io/docs/client-api/
+        var $this = this,
+            client = SocketClient.connect(this.server, {
+                reconnection: false
+            });
+        client.on('connect', function () {
+            $this.report(this, null);
+        });
+        client.on('error', function (err) {
+            $this.report(this, err);
+        });
+        client.on('connect_error', function (err) {
+            var data = {
+                message: err.message,
+                code: err.description
+            };
+            $this.report(null, data);
+        });
+        client.on('reconnect_attempt', function (err) {
+            console.info('SocketIO client reconnect_attempt');
+        });
+    };
+
+    worker = new Worker(args[0], args[1]);
+    worker.createConnection();
 
 }());

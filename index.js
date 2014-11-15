@@ -4,41 +4,35 @@
     'use strict';
 
     var FS = require('fs'),
-        Path = require('path'),
-        Winston = require('winston'),
         PKG = require('./package.json'),
         Commander = require('commander'),
+        Logger = require('./lib/smile/socketio_bench/logger'),
         Benchmark = require('./lib/smile/socketio_bench/benchmark');
 
     Commander
         .version(PKG.version)
-        .usage('<conf>')
-        .option('-c, --conf <s>', 'Config file')
+        .usage('[options] <server>')
+        .option('-w, --worker <n>', 'Number of socket client, Default to 1', parseInt)
+        .option('-a, --amount <n>', 'Persistents connections, Default to 100', parseInt)
+        .option('-c, --concurency <n>', 'Concurents connections per second, Default to 20', parseInt)
         .parse(process.argv);
 
-    console.log('Socket.io Benchmark v' + Commander.version());
-
-    var conf = Path.normalize(__dirname + Path.sep + 'benchmark.json');
-    if(Commander.config){
-        conf = Path.normalize(Path.join(process.cwd(), Commander.config));
+    if (!Commander.args.length) {
+        Commander.help();
     }
 
-    console.log(conf);
-
-    /*
     var options = {
-        workers: Commander.worker || 200,
+        workers: Commander.worker || 1,
         amounts: Commander.amount || 100,
         messages: Commander.message || 0,
         concurrencies: Commander.concurency || 20
     };
 
     var server = Commander.args[0],
-        worker = './workers/socket.io';
+        service = './workers/socket.io';
 
-    var bench = new Benchmark(options);
-    bench.launch(server, worker);
-    */
-
+    Logger.head('Socket.io Benchmark v' + Commander.version());
+    var bench = new Benchmark(options, Logger);
+    bench.launch(server, service);
 
 }());
