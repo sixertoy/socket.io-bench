@@ -1,0 +1,23 @@
+{
+  "name": "socket.io-bench-server",
+  "version": "0.1.0",
+  "description": "Simple socket.io server",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/malas34/socket.io-bench"
+  },
+  "author": "Matthieu Lassalvy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/malas34/socket.io-bench/issues"
+  },
+  "homepage": "https://github.com/malas34/socket.io-bench",
+  "dependencies": {
+    "express": "^4.10.2"
+  }
+}
