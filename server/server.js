@@ -257,10 +257,10 @@
     process.on('uncaughtException', function (err) {
         console.log('Benchmark uncaughtException as pid: ' + process.pid);
         console.log(err);
+        process.exit(0);
     });
 
     process.on('SIGINT', function () {
-        clear();
         process.exit(0);
     });
 
