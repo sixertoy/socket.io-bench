@@ -18,6 +18,8 @@
   },
   "homepage": "https://github.com/malas34/socket.io-bench",
   "dependencies": {
-    "express": "^4.10.2"
+    "express": "^4.10.2",
+    "sequelize": "^2.0.0-rc2",
+    "mysql": "^2.5.3"
   }
 }

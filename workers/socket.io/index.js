@@ -28,6 +28,7 @@
         this.id = id;
         this.stop = null;
         this.start = null;
+        this.client = null;
         this.server = server;
     }
 
@@ -50,10 +51,9 @@
             }
             process.send(message);
         }
-
     });
 
-    Worker.prototype.createConnection = function () {
+    Worker.prototype.createConnection = function (count) {
         this.start = Date.now();
         // no auto reconnect
         // @see http://socket.io/docs/client-api/
@@ -62,24 +62,26 @@
                 reconnection: false
             });
         client.on('connect', function () {
-            $this.report(this, null);
+            client.on('server.onconnection', function(data){
+            })
+            client.on('server.update', function(data){
+            });
+            //$this.report(this, null);
         });
         client.on('error', function (err) {
-            $this.report(this, err);
+            // $this.report(this, err);
         });
         client.on('connect_error', function (err) {
             var data = {
                 message: err.message,
                 code: err.description
             };
-            $this.report(null, data);
+            // $this.report(null, data);
         });
-        client.on('reconnect_attempt', function (err) {
-            logger.debug('SocketIO client reconnect_attempt');
-        });
+        this.client = client;
     };
 
     worker = new Worker(args[0], args[1]);
-    worker.createConnection();
+    worker.createConnection(args[2]);
 
 }());
