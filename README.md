@@ -3,8 +3,9 @@
 ## Parametres
 
 * '-w, --worker' Nombre d'instances (process) client
-* '-a, --amount' Nombre de connections client
-* '-c, --concurrency' Nombre de connections concurrentes client (paquets/paquets de connections)
+* '-p, --packets' Nombre groupes de connections concurrentes
+* '-c, --clients' Nombre de clients par paquets
+* '-d, --debug' Logger debug
 * '--help' Help
 
 ## Scenario
@@ -25,13 +26,16 @@
 #### Client
 
 * pas de reconnections automatiques si echec de connection
-* une fois le nombre de clients/paquets connecte au serveur, relance une connexion de paquets pour 'amount' connections
+* une fois le nombre de clients/paquets connecte au serveur, relance un paquet de connexion
 
 
-#### Reports
+### Reports
 
-* nombre de messages recus par paquets
-
+#### Server
+* Nb d'users connectes max
+* Temps uptime de watch (users in/out)
+* Nb de messages envoyes (update/connection)
+* max memory usage (heapTotal and heapUsed refer to V8's memory usage).
 
 ## History
 
