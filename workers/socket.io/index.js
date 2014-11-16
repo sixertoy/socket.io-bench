@@ -12,7 +12,8 @@
     var worker,
         lodash = require('lodash'),
         args = process.argv.slice(2), // index, server
-        SocketClient = require('socket.io-client');
+        SocketClient = require('socket.io-client'),
+        logger = require('./../../lib/smile/socketio_bench/logger');
 
     /** -----------------------------------------------
      *
@@ -23,7 +24,7 @@
      *
      */
     function Worker(server, id) {
-        console.log('Process ' + process.pid + ' at work ');
+        logger.debug('Process ' + process.pid + ' at work ');
         this.id = id;
         this.stop = null;
         this.start = null;
@@ -74,7 +75,7 @@
             $this.report(null, data);
         });
         client.on('reconnect_attempt', function (err) {
-            console.info('SocketIO client reconnect_attempt');
+            logger.debug('SocketIO client reconnect_attempt');
         });
     };
 
