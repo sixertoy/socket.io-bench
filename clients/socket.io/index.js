@@ -43,11 +43,12 @@
     });
 
     var worker,
+        b = './../../',
         lodash = require('lodash'),
-        SocketClient = require('socket.io-client'),
         args = process.argv.slice(2), // index, server
-        Clock = require('./../../lib/smile/socketio_bench/clock'),
-        logger = require('./../../lib/smile/socketio_bench/logger');
+        SocketClient = require('socket.io-client'),
+        Clock = require(b + 'lib/smile/socketio-benchmark/clock'),
+        logger = require(b + 'lib/smile/socketio-benchmark/logger');
 
     /** -----------------------------------------------
 
@@ -62,14 +63,14 @@
      * @params amounts - Nb de paquets
      *
      */
-    function Worker(server, connections, packets) {
+    function Worker(server, clients, packets) {
         logger.debug('Process ' + process.pid + ' at work ');
         this.stacks = [];
         this.clients = [];
         this.server = server;
         this.packets = packets;
         this.clock = new Clock();
-        this.connections = connections; // nb de connections par paquets
+        this.connections = clients; // nb de connections par paquets
     }
 
 
@@ -94,11 +95,11 @@
             // si le nombre de clients ayant tente de se connecter au server
             // et sup ou egale au nombre de connections/packets
             if (this.clients.length >= this.connections) {
-                // on arrete le calcul du temps
-                var elapsed = this.clock.stop();
                 // on stocke les connections
                 this.stacks.push({
-                    elapsed: this.clients
+                    elapsed: this.clock.stop(),
+                    reports: this.clients,
+                    pid: process.pid
                 });
                 // on relance les connections
                 // pour les packets
@@ -123,40 +124,50 @@
         }
     });
 
-    Worker.prototype.createClient = function () {
+    Worker.prototype.createClient = function (stackid, index) {
         // @see http://socket.io/docs/client-api/
-        console.log('createClient');
         var $this = this,
             opts = {
                 'force new connection': true,
                 'reconnection': false // no autoreconnect
             },
             client = SocketClient.connect(this.server, opts);
+        // store des data pour le benchmark
+        // dans le client
+        var benchdata = {
+            messages: 0,
+            index: index,
+            stackid: stackid
+        };
         // abonnement au event du serveur
         client.on('connect', function () {
             logger.debug('Client connected');
-            $this.report(null, client);
+            $this.report(null, benchdata);
             // recoit les datas existants en BDD
             // a la connection du client
-            client.on('server.onconnection', function (data) {});
+            client.on('server.onconnection', function (data) {
+                // $this.stacks[stackid][index].messages++;
+            });
             // recoit les updates du server
-            client.on('server.update', function (data) {});
+            client.on('server.update', function (data) {
+                // $this.stacks[stackid][index].messages++;
+            });
         });
         // erreur du client
         client.on('error', function (err) {
-            $this.report(err, null);
             logger.debug('Client error');
             logger.error(err);
+            $this.report(err, null);
         });
         // erreur de connection sur le server
         // server non lance
         client.on('connect_error', function (err) {
             logger.debug('Client connection error');
-            logger.error(err);
             err = {
                 message: err.message,
                 code: err.description
             };
+            logger.error(err);
             $this.report(err, null);
         });
         // erreur de connection sur le server
@@ -197,8 +208,6 @@
     Worker.prototype.createConnections = function () {
         // stocke les clients
         this.clients = [];
-        console.log('createConnections');
-        console.log(this.stacks.length + ' :: ' + this.packets);
         if (this.stacks.length < this.packets) {
             // si tous les client des paquets
             // n'ont pas tous ete crees
@@ -206,7 +215,7 @@
             this.clock.start();
             var i;
             for (i = 0; i < this.connections; i++) {
-                this.createClient();
+                this.createClient(this.stacks.length, i);
             }
         } else {
             // si tous les clients

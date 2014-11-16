@@ -3,12 +3,46 @@
 
     'use strict';
 
+    /** -------------------------------------------------
+
+
+ Infos sur le process du benchmark
+
+
+*/
+    process.on('exit', function () {
+        console.log('Benchmark exit as pid: ' + process.pid);
+    });
+
+    process.on('error', function (err) {
+        console.log('Benchmark error as pid: ' + process.pid);
+        console.log(err);
+    });
+
+    process.on('disconnect', function (err) {
+        console.log('Benchmark disconnect as pid: ' + process.pid);
+    });
+
+    process.on('uncaughtException', function (err) {
+        console.log('Benchmark uncaughtException as pid: ' + process.pid);
+        console.log(err);
+    });
+
+
+    /** -------------------------------------------------
+
+ Benchmark
+
+
+
+*/
+
     var port,
         cTimeout = null, // timeout de chek bdd
         lTimeout = null, // timeout de users connected
         usersConnected = 0,
         usersPerSecond = 0,
-        logger = require('./../lib/smile/socketio_bench/logger'),
+        logger = require('./../lib/smile/socketio-benchmark/logger'),
         Sequelize = require('sequelize'),
         PKG = require('./package.json'),
         Commander = require('commander'),
@@ -40,13 +74,6 @@
         usersPerSecond = 0;
     }
 
-    function launchWatch() {
-        cTimeout = setTimeout(function () {
-            var m = Math.round(Math.random() * 10);
-            checkDatabase(m % 2);
-        }, 2000);
-    }
-
     function sendMessage(data, client) {
         if (client) {
             data = JSON.stringify(data);
@@ -54,6 +81,13 @@
         } else {
             io.emit('server.update', data);
         }
+    }
+
+    function launchWatch() {
+        cTimeout = setTimeout(function () {
+            var m = Math.round(Math.random() * 10);
+            checkDatabase(m % 2);
+        }, 2000);
     }
 
     /**
@@ -67,21 +101,24 @@
             query = 'SELECT * FROM `%%table%%`',
             table = (modulo ? 'watch' : 'empty'),
             sql = query.replace('%%table%%', table);
+
         logger.debug('checkDatabase :: ' + sql);
+
         // envoi de la requete
         sequelize.query(sql, null, opts).then(function (result) {
             if (!result.length) {
-                launchWatch();
+
             } else {
                 query = 'SELECT * FROM `picture`';
                 sequelize.query(sql, null, opts).then(function (result) {
                     var data = JSON.stringify(entity);
                     sendMessage(data);
-                    launchWatch();
                 }, function (err) {
                     logger.fatal(err);
                 });
             }
+            // launchWatch();
+
         }, function (err) {
             // echec de la requete
             logger.fatal(err);
@@ -122,9 +159,9 @@
 
             // si un nouveau client se connecte
             // si le watch de la BDD n'est pas actif on lance le watch
-            if (cTimeout === null) {
+            if (lTimeout === null) {
                 lTimeout = setInterval(logStatus, 1000);
-                checkDatabase(0);
+                launchWatch();
                 logStatus();
             }
 

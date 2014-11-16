@@ -40,8 +40,8 @@
         FS = require('fs'),
         PKG = require('./package.json'),
         Commander = require('commander'),
-        logger = require('./lib/smile/socketio_bench/logger'),
-        Benchmark = require('./lib/smile/socketio_bench/benchmark');
+        logger = require('./lib/smile/socketio-benchmark/logger'),
+        Benchmark = require('./lib/smile/socketio-benchmark/benchmark');
 
     // recuperation des arguments
     // de la console
@@ -49,8 +49,8 @@
         .version(PKG.version)
         .usage('[options] <server>')
         .option('-w, --worker <n>', 'Number of socket client, Default to 1', parseInt)
-        .option('-a, --amount <n>', 'Persistents connections, Default to 100', parseInt)
-        .option('-c, --concurency <n>', 'Concurents connections per second, Default to 20', parseInt)
+        .option('-c, --clients <n>', 'Concurent clients/packets, Default to 20', parseInt)
+        .option('-p, --packets <n>', 'Number of packets of clients, Default to 5 (100 connections)', parseInt)
         .parse(process.argv);
 
     if (!Commander.args.length) {
@@ -66,14 +66,15 @@
         // definition des options du benchmark
         options = {
             workers: Commander.worker || 1,
-            amounts: Commander.amount || 100,
+            packets: Commander.packets || 5,
             messages: Commander.message || 0,
-            concurrencies: Commander.concurency || 20
+            clients: Commander.clients || 20
         };
 
         // affichage user friendly
         logger.head('Socket.io Benchmark v' + Commander.version());
-        logger.info('Launch bench with ' + options.amounts + ' total connection, ' + options.concurrencies + ' concurent connection');
+        logger.info('Launch bench with ' + options.clients + ' concurent clients/' + options.packets + ' packets.');
+        logger.info((options.clients * options.packets) + 'Persistents connection will be etablished');
         // logger.info(program.message + ' message(s) send by client');
         logger.info(options.workers + ' worker(s)');
 
