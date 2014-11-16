@@ -39,28 +39,41 @@
 */
 
     var port,
-        updateMsg = 0,
-        maxConnected = 0,
-        connectionMsg = 0,
+        stats = {
+            updateMsg: 0,
+            maxConnected: 0,
+            connectionMsg: 0,
+            usersConnected: 0,
+            usersPerSecond: 0,
+            memoryUsage: process.memoryUsage()
+        },
+        usersPerSecond = 0,
         cTimeout = null, // timeout de chek bdd
         lTimeout = null, // timeout de users connected
-        usersConnected = 0,
-        usersPerSecond = 0,
-        logger = require('./../lib/smile/core/logger'),
-        Clock = require('./../lib/smile/core/clock'),
-        Sequelize = require('sequelize'),
-        PKG = require('./package.json'),
-        Commander = require('commander'),
-        app = require('express')(),
-        http = require('http').Server(app),
-        io = require('socket.io')(http),
-        sequelize = new Sequelize('socketio', 'root', ''),
+        countEntries = 20, // pour multiplication gros messages
+        // files
+        pkg = require('./package.json'),
         entity = require('./mockups/entity.json'),
-        countEntries = 20,
-        clock = new Clock(); // nb d'entity envoyees a la connexion d'un user
+        // imports
+        HTTP = require('http'),
+        Utils = require('util'),
+        Express = require('express'),
+        SocketIO = require('socket.io'),
+        Sequelize = require('sequelize'),
+        Commander = require('commander'),
+        Reporter = require('./reporter'),
+        Clock = require('./../lib/smile/core/clock'),
+        logger = require('./../lib/smile/core/logger'),
+        // instance
+        app = new Express(),
+        http = HTTP.Server(app),
+        io = new SocketIO(http),
+        clock = new Clock(), // nb d'entity envoyees a la connexion d'un user
+        reporter = new Reporter(),
+        sequelize = new Sequelize('socketio', 'root', '');
 
     Commander
-        .version(PKG.version)
+        .version(pkg.version)
         .usage('[options]')
         .option('-p, --port <n>', 'Listening port, default 3000', parseInt)
         .option('-d, --debug [value]', 'Debug mode')
@@ -78,27 +91,34 @@
      *
      */
     function logStatus() {
-        maxConnected = (usersConnected > maxConnected ? usersConnected : maxConnected);
-        logger.debug(usersConnected + ' users | ' + usersPerSecond + ' users/s');
+        stats.maxConnected = (stats.usersConnected > stats.maxConnected ? stats.usersConnected : stats.maxConnected);
+        logger.debug(stats.usersConnected + ' users | ' + usersPerSecond + ' users/s');
+        if (usersPerSecond > stats.usersPerSecond) {
+            stats.usersPerSecond = usersPerSecond;
+        }
         usersPerSecond = 0;
+        // memory usage
+        var current = stats.process.memoryUsage();
+        if (current.heapUsed > stats.memoryUsage.heapUsed) {
+            stats.memoryUsage.heapUsed = current.heapUsed;
+        }
+        if (current.rss > stats.memoryUsage.rss) {
+            stats.memoryUsage.rss = current.rss;
+        }
+        if (current.heapTotal > stats.memoryUsage.heapTotal) {
+            stats.memoryUsage.heapTotal = current.heapTotal;
+        }
     }
 
     function sendMessage(data, client) {
         if (client) {
-            connectionMsg++;
+            stats.connectionMsg++;
             data = JSON.stringify(data);
             io.to(client.id).emit('server.onconnection', data);
         } else {
-            updateMsg++;
+            stats.updateMsg++;
             io.emit('server.update', data);
         }
-    }
-
-    function launchWatch() {
-        cTimeout = setInterval(function () {
-            var m = Math.round(Math.random() * 10);
-            checkDatabase(m % 2);
-        }, 2000);
     }
 
     /**
@@ -130,7 +150,13 @@
             // echec de la requete
             logger.fatal(err);
         });
+    }
 
+    function launchWatch() {
+        cTimeout = setInterval(function () {
+            var m = Math.round(Math.random() * 10);
+            checkDatabase(m % 2);
+        }, 2000);
     }
 
     /**
@@ -146,9 +172,9 @@
 
         io.on('connection', function (client) {
             usersPerSecond++;
-            usersConnected++;
+            stats.usersConnected++;
 
-            logger.info(usersConnected + ' users connected.');
+            logger.info(stats.usersConnected + ' users connected.');
             logger.debug('Client connection at ' + Date.now());
 
             // envoi les datas existant au client actuel
@@ -159,6 +185,7 @@
                 },
                 sql = 'SELECT * FROM `picture`';
             sequelize.query(sql, null, opts).then(function (result) {
+                // envoi d'un gros paquet a la connection d'un user
                 for (i = 0; i < countEntries; i++) {
                     data.push(entity);
                 }
@@ -180,8 +207,8 @@
             // on verifie qu'il reste des clients
             client.on('disconnect', function () {
                 logger.debug('On client disconnect');
-                usersConnected--;
-                if (usersConnected === 0) {
+                stats.usersConnected--;
+                if (stats.usersConnected === 0) {
                     logger.info('No user connected');
                     if (cTimeout) {
                         clearInterval(cTimeout);
@@ -191,13 +218,13 @@
                         clearInterval(lTimeout);
                         lTimeout = null;
                     }
-                    var time = clock.stopAndClear(true);
-                    var count = (updateMsg + connectionMsg);
-                    logger.ok('Server has send ' + count + ' messages (' + connectionMsg + '/' + updateMsg + ') for ' + maxConnected + ' connected users max');
-                    logger.ok('Server was up during ' + time + ' seconds.');
-                    updateMsg = 0;
-                    maxConnected = 0;
-                    connectionMsg = 0;
+                    stats.time = clock.stopAndClear(true);
+                    var count = (stats.updateMsg + stats.connectionMsg);
+                    logger.ok('Server has send ' + count + ' messages for ' + stats.maxConnected + ' connected users max');
+                    logger.ok('Server was up during ' + stats.time + ' seconds.');
+                    stats.updateMsg = 0;
+                    stats.maxConnected = 0;
+                    stats.connectionMsg = 0;
                 }
             });
         });

@@ -35,7 +35,7 @@
 * Nb d'users connectes max
 * Temps uptime de watch (users in/out)
 * Nb de messages envoyes (update/connection)
-* max memory usage (heapTotal and heapUsed refer to V8's memory usage).
+* max memory usage (users in/out | heapTotal and heapUsed refer to V8's memory usage)
 
 ## History
 
