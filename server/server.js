@@ -1,3 +1,4 @@
+/*jslint plusplus: true */
 /*global require, module, process, console */
 (function () {
 
@@ -38,11 +39,15 @@
 */
 
     var port,
+        updateMsg = 0,
+        maxConnected = 0,
+        connectionMsg = 0,
         cTimeout = null, // timeout de chek bdd
         lTimeout = null, // timeout de users connected
         usersConnected = 0,
         usersPerSecond = 0,
         logger = require('./../lib/smile/core/logger'),
+        Clock = require('./../lib/smile/core/clock'),
         Sequelize = require('sequelize'),
         PKG = require('./package.json'),
         Commander = require('commander'),
@@ -51,7 +56,8 @@
         io = require('socket.io')(http),
         sequelize = new Sequelize('socketio', 'root', ''),
         entity = require('./mockups/entity.json'),
-        countEntries = 20; // nb d'entity envoyees a la connexion d'un user
+        countEntries = 20,
+        clock = new Clock(); // nb d'entity envoyees a la connexion d'un user
 
     Commander
         .version(PKG.version)
@@ -72,21 +78,24 @@
      *
      */
     function logStatus() {
+        maxConnected = (usersConnected > maxConnected ? usersConnected : maxConnected);
         logger.debug(usersConnected + ' users | ' + usersPerSecond + ' users/s');
         usersPerSecond = 0;
     }
 
     function sendMessage(data, client) {
         if (client) {
+            connectionMsg++;
             data = JSON.stringify(data);
             io.to(client.id).emit('server.onconnection', data);
         } else {
+            updateMsg++;
             io.emit('server.update', data);
         }
     }
 
     function launchWatch() {
-        cTimeout = setTimeout(function () {
+        cTimeout = setInterval(function () {
             var m = Math.round(Math.random() * 10);
             checkDatabase(m % 2);
         }, 2000);
@@ -108,9 +117,7 @@
 
         // envoi de la requete
         sequelize.query(sql, null, opts).then(function (result) {
-            if (!result.length) {
-
-            } else {
+            if (result.length) {
                 query = 'SELECT * FROM `picture`';
                 sequelize.query(sql, null, opts).then(function (result) {
                     var data = JSON.stringify(entity);
@@ -119,8 +126,6 @@
                     logger.fatal(err);
                 });
             }
-            // launchWatch();
-
         }, function (err) {
             // echec de la requete
             logger.fatal(err);
@@ -143,12 +148,15 @@
             usersPerSecond++;
             usersConnected++;
 
+            logger.info(usersConnected + ' users connected.');
             logger.debug('Client connection at ' + Date.now());
 
             // envoi les datas existant au client actuel
             var i,
                 data = [],
-                opts = {raw: true},
+                opts = {
+                    raw: true
+                },
                 sql = 'SELECT * FROM `picture`';
             sequelize.query(sql, null, opts).then(function (result) {
                 for (i = 0; i < countEntries; i++) {
@@ -165,6 +173,7 @@
                 lTimeout = setInterval(logStatus, 1000);
                 launchWatch();
                 logStatus();
+                clock.start();
             }
 
             // si un client se deconnecte
@@ -173,6 +182,7 @@
                 logger.debug('On client disconnect');
                 usersConnected--;
                 if (usersConnected === 0) {
+                    logger.info('No user connected');
                     if (cTimeout) {
                         clearInterval(cTimeout);
                         cTimeout = null;
@@ -181,6 +191,13 @@
                         clearInterval(lTimeout);
                         lTimeout = null;
                     }
+                    var time = clock.stopAndClear(true);
+                    var count = (updateMsg + connectionMsg);
+                    logger.ok('Server has send ' + count + ' messages (' + connectionMsg + '/' + updateMsg + ') for ' + maxConnected + ' connected users max');
+                    logger.ok('Server was up during ' + time + ' seconds.');
+                    updateMsg = 0;
+                    maxConnected = 0;
+                    connectionMsg = 0;
                 }
             });
         });

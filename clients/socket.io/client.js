@@ -146,10 +146,12 @@
             // recoit les datas existants en BDD
             // a la connection du client
             client.on('server.onconnection', function (data) {
+                console.log('onconnection message received');
                 // $this.stacks[stackid][index].messages++;
             });
             // recoit les updates du server
             client.on('server.update', function (data) {
+                console.log('update message received');
                 // $this.stacks[stackid][index].messages++;
             });
         });
@@ -169,26 +171,6 @@
             };
             logger.error(err);
             $this.report(err, null);
-        });
-        // erreur de connection sur le server
-        // server non lance
-        client.on('connect_timeout', function (err) {
-            logger.debug('Client connect timeout');
-        });
-        // erreur de connection sur le server
-        // server non lance
-        client.on('reconnecting', function (err) {
-            logger.debug('Client reconnecting');
-        });
-        // erreur de connection sur le server
-        // server non lance
-        client.on('reconnect_error', function (err) {
-            logger.debug('Client reconnect_error');
-        });
-        // erreur de connection sur le server
-        // server non lance
-        client.on('reconnect_error', function (err) {
-            logger.debug('Client reconnect_failed');
         });
 
     };
@@ -220,9 +202,12 @@
         } else {
             // si tous les clients
             // des paquest ont ete crees
-            console.log('envoi des reports');
-            console.log(this.stacks);
-            // send message
+            var message = {
+                type: 'sucess',
+                pid: process.pid,
+                data: JSON.stringify(this.stacks)
+            }
+            process.send(message);
         }
     };
 
