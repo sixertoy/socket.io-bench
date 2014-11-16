@@ -29,6 +29,11 @@
         console.log(err);
     });
 
+    process.on('SIGINT', function () {
+        clear();
+        process.exit(0);
+    });
+
 
     /** -------------------------------------------------
 
@@ -39,22 +44,16 @@
 */
 
     var port,
-        stats = {
-            updateMsg: 0,
-            maxConnected: 0,
-            connectionMsg: 0,
-            usersConnected: 0,
-            usersPerSecond: 0,
-            memoryUsage: process.memoryUsage()
-        },
+        stats = null,
         usersPerSecond = 0,
-        cTimeout = null, // timeout de chek bdd
+        wTimeout = null, // timeout de chek bdd
         lTimeout = null, // timeout de users connected
         countEntries = 20, // pour multiplication gros messages
         // files
         pkg = require('./package.json'),
         entity = require('./mockups/entity.json'),
         // imports
+        OS = require('os'),
         HTTP = require('http'),
         Utils = require('util'),
         Express = require('express'),
@@ -71,6 +70,19 @@
         clock = new Clock(), // nb d'entity envoyees a la connexion d'un user
         reporter = new Reporter(),
         sequelize = new Sequelize('socketio', 'root', '');
+
+    stats = {
+        os:{
+            freemem: OS.freemem,
+            totalmem: OS.totalmem,
+        },
+        updateMsg: 0,
+        maxConnected: 0,
+        connectionMsg: 0,
+        usersConnected: 0,
+        usersPerSecond: 0,
+        memoryUsage: process.memoryUsage()
+    };
 
     Commander
         .version(pkg.version)
@@ -95,18 +107,22 @@
         logger.debug(stats.usersConnected + ' users | ' + usersPerSecond + ' users/s');
         if (usersPerSecond > stats.usersPerSecond) {
             stats.usersPerSecond = usersPerSecond;
+            logger.info('Max usersPerSecond: ' + stats.memoryUsage.usersPerSecond);
         }
         usersPerSecond = 0;
         // memory usage
-        var current = stats.process.memoryUsage();
+        var current = process.memoryUsage();
         if (current.heapUsed > stats.memoryUsage.heapUsed) {
             stats.memoryUsage.heapUsed = current.heapUsed;
+            logger.info('Max heapused: ' + stats.memoryUsage.heapUsed);
         }
         if (current.rss > stats.memoryUsage.rss) {
             stats.memoryUsage.rss = current.rss;
+            logger.info('Max rss: ' + stats.memoryUsage.rss);
         }
         if (current.heapTotal > stats.memoryUsage.heapTotal) {
             stats.memoryUsage.heapTotal = current.heapTotal;
+            logger.info('Max heapTotal: ' + stats.memoryUsage.heapTotal);
         }
     }
 
@@ -114,9 +130,11 @@
         if (client) {
             stats.connectionMsg++;
             data = JSON.stringify(data);
+            logger.debug('Send connection message');
             io.to(client.id).emit('server.onconnection', data);
         } else {
             stats.updateMsg++;
+            logger.debug('Send update message');
             io.emit('server.update', data);
         }
     }
@@ -125,38 +143,50 @@
      * Verification sur la BDD
      *
      */
-    function checkDatabase(modulo) {
+    function watchDatabase(modulo) {
         var opts = {
                 raw: true
             },
-            query = 'SELECT * FROM `%%table%%`',
-            table = (modulo ? 'watch' : 'empty'),
-            sql = query.replace('%%table%%', table);
+            picture = 'SELECT * FROM `picture`',
+            watch = 'SELECT * FROM `' + (modulo ? 'watch' : 'empty') + '`';
 
-        logger.debug('checkDatabase :: ' + sql);
-
+        logger.debug('checkDatabase :: ' + watch);
         // envoi de la requete
-        sequelize.query(sql, null, opts).then(function (result) {
+        sequelize.query(watch, null, opts).then(function (result) {
+            //
             if (result.length) {
-                query = 'SELECT * FROM `picture`';
-                sequelize.query(sql, null, opts).then(function (result) {
+                sequelize.query(picture, null, opts).then(function (result) {
                     var data = JSON.stringify(entity);
                     sendMessage(data);
                 }, function (err) {
                     logger.fatal(err);
                 });
             }
+
         }, function (err) {
             // echec de la requete
             logger.fatal(err);
+
         });
     }
 
-    function launchWatch() {
-        cTimeout = setInterval(function () {
-            var m = Math.round(Math.random() * 10);
-            checkDatabase(m % 2);
-        }, 2000);
+    function clear() {
+        if (lTimeout) {
+            clearInterval(lTimeout);
+            lTimeout = null;
+        }
+        if (wTimeout) {
+            clearInterval(wTimeout);
+            wTimeout = null;
+        }
+        stats.time = clock.stopAndClear(true);
+        var count = (stats.updateMsg + stats.connectionMsg);
+        logger.ok('Server has send ' + count + ' messages for ' + stats.maxConnected + ' connected users max');
+        logger.ok('Server was up during ' + stats.time + ' seconds.');
+        stats.updateMsg = 0;
+        stats.maxConnected = 0;
+        stats.connectionMsg = 0;
+
     }
 
     /**
@@ -197,10 +227,13 @@
             // si un nouveau client se connecte
             // si le watch de la BDD n'est pas actif on lance le watch
             if (lTimeout === null) {
-                lTimeout = setInterval(logStatus, 1000);
-                launchWatch();
-                logStatus();
                 clock.start();
+                logStatus();
+                lTimeout = setInterval(logStatus, 1000);
+                wTimeout = setInterval(function () {
+                    var m = Math.round(Math.random() * 10);
+                    watchDatabase(m % 2);
+                }, 2000);
             }
 
             // si un client se deconnecte
@@ -210,25 +243,10 @@
                 stats.usersConnected--;
                 if (stats.usersConnected === 0) {
                     logger.info('No user connected');
-                    if (cTimeout) {
-                        clearInterval(cTimeout);
-                        cTimeout = null;
-                    }
-                    if (cTimeout) {
-                        clearInterval(lTimeout);
-                        lTimeout = null;
-                    }
-                    stats.time = clock.stopAndClear(true);
-                    var count = (stats.updateMsg + stats.connectionMsg);
-                    logger.ok('Server has send ' + count + ' messages for ' + stats.maxConnected + ' connected users max');
-                    logger.ok('Server was up during ' + stats.time + ' seconds.');
-                    stats.updateMsg = 0;
-                    stats.maxConnected = 0;
-                    stats.connectionMsg = 0;
+                    clear();
                 }
             });
         });
-
     }
 
     sequelize.authenticate().then(function () {
