@@ -7,26 +7,21 @@
     var colors = require('colors'),
         Table = require('cli-table');
 
-    function Reporter() {
-        this.table = new Table({
-            head: [colors.red.bold('uptime'), colors.red.bold('conn. max'), colors.red.bold('conn. max/s'), colors.red.bold('msg')],
-            colWidths: [10, 40, 6, 8],
-            colAligns: ['middle', 'middle', 'middle', 'middle']
-        });
-    }
+    function Reporter() {}
 
-    Reporter.prototype.log = function (reports) {
-        var i, entry;
-        for (i = 0; i < reports.length; i++) {
-            entry = [
-                reports[i].pid,
-                reports[i].message,
-                reports[i].code,
-                reports[i].time
-            ];
-            this.table.push(entry);
-        }
-        console.log(this.table.toString());
+    Reporter.prototype.log = function (stats) {
+        var output = new Table({
+                head: [colors.red.bold('Uptime'), colors.red.bold('User.'), colors.red.bold('Msg')],
+                colWidths: [20, 20, 20],
+                colAligns: ['middle', 'middle', 'middle']
+            }),
+            msg = (stats.connectionMsg + stats.updateMsg);
+        output.push([
+            stats.time,
+            stats.maxConnected + colors.italic(' (' + stats.usersPerSecond + ')'),
+            msg + colors.italic(' (' + stats.connectionMsg + '|' + stats.updateMsg + ')')
+        ]);
+        console.log(output.toString());
     };
 
     module.exports = Reporter;

@@ -4,36 +4,6 @@
 
     'use strict';
 
-    /** -------------------------------------------------
-
-
- Infos sur le process du benchmark
-
-
-*/
-    process.on('exit', function () {
-        console.log('Benchmark exit as pid: ' + process.pid);
-    });
-
-    process.on('error', function (err) {
-        console.log('Benchmark error as pid: ' + process.pid);
-        console.log(err);
-    });
-
-    process.on('disconnect', function (err) {
-        console.log('Benchmark disconnect as pid: ' + process.pid);
-    });
-
-    process.on('uncaughtException', function (err) {
-        console.log('Benchmark uncaughtException as pid: ' + process.pid);
-        console.log(err);
-    });
-
-    process.on('SIGINT', function () {
-        clear();
-        process.exit(0);
-    });
-
 
     /** -------------------------------------------------
 
@@ -69,12 +39,12 @@
         io = new SocketIO(http),
         clock = new Clock(), // nb d'entity envoyees a la connexion d'un user
         reporter = new Reporter(),
-        sequelize = new Sequelize('socketio', 'root', '');
+        sequelize = new Sequelize('socketio', 'root', '', {logging: false});
 
     stats = {
-        os:{
-            freemem: OS.freemem,
-            totalmem: OS.totalmem,
+        os: {
+            freemem: OS.freemem(),
+            totalmem: OS.totalmem()
         },
         updateMsg: 0,
         maxConnected: 0,
@@ -107,22 +77,22 @@
         logger.debug(stats.usersConnected + ' users | ' + usersPerSecond + ' users/s');
         if (usersPerSecond > stats.usersPerSecond) {
             stats.usersPerSecond = usersPerSecond;
-            logger.info('Max usersPerSecond: ' + stats.memoryUsage.usersPerSecond);
+            logger.debug('Max usersPerSecond: ' + stats.memoryUsage.usersPerSecond);
         }
         usersPerSecond = 0;
         // memory usage
         var current = process.memoryUsage();
         if (current.heapUsed > stats.memoryUsage.heapUsed) {
             stats.memoryUsage.heapUsed = current.heapUsed;
-            logger.info('Max heapused: ' + stats.memoryUsage.heapUsed);
+            logger.debug('Max heapused: ' + stats.memoryUsage.heapUsed);
         }
         if (current.rss > stats.memoryUsage.rss) {
             stats.memoryUsage.rss = current.rss;
-            logger.info('Max rss: ' + stats.memoryUsage.rss);
+            logger.debug('Max rss: ' + stats.memoryUsage.rss);
         }
         if (current.heapTotal > stats.memoryUsage.heapTotal) {
             stats.memoryUsage.heapTotal = current.heapTotal;
-            logger.info('Max heapTotal: ' + stats.memoryUsage.heapTotal);
+            logger.debug('Max heapTotal: ' + stats.memoryUsage.heapTotal);
         }
     }
 
@@ -149,7 +119,6 @@
             },
             picture = 'SELECT * FROM `picture`',
             watch = 'SELECT * FROM `' + (modulo ? 'watch' : 'empty') + '`';
-
         logger.debug('checkDatabase :: ' + watch);
         // envoi de la requete
         sequelize.query(watch, null, opts).then(function (result) {
@@ -162,11 +131,9 @@
                     logger.fatal(err);
                 });
             }
-
         }, function (err) {
             // echec de la requete
             logger.fatal(err);
-
         });
     }
 
@@ -180,13 +147,22 @@
             wTimeout = null;
         }
         stats.time = clock.stopAndClear(true);
+        // logs;
         var count = (stats.updateMsg + stats.connectionMsg);
         logger.ok('Server has send ' + count + ' messages for ' + stats.maxConnected + ' connected users max');
         logger.ok('Server was up during ' + stats.time + ' seconds.');
-        stats.updateMsg = 0;
-        stats.maxConnected = 0;
-        stats.connectionMsg = 0;
-
+        logger.debug(Utils.inspect(stats));
+        if (stats.time > 0) {
+            reporter.log(stats);
+            // clear
+            stats.time = 0;
+            stats.updateMsg = 0;
+            stats.maxConnected = 0;
+            stats.connectionMsg = 0;
+            stats.usersConnected = 0;
+            stats.usersPerSecond = 0;
+            stats.memoryUsage = process.memoryUsage();
+        }
     }
 
     /**
@@ -256,6 +232,36 @@
     }, function (err) {
         // echec de connexion a mysql
         logger.fatal(err);
+    });
+
+    /** -------------------------------------------------
+
+
+ Infos sur le process du benchmark
+
+
+*/
+    process.on('exit', function () {
+        console.log('Benchmark exit as pid: ' + process.pid);
+    });
+
+    process.on('error', function (err) {
+        console.log('Benchmark error as pid: ' + process.pid);
+        console.log(err);
+    });
+
+    process.on('disconnect', function (err) {
+        console.log('Benchmark disconnect as pid: ' + process.pid);
+    });
+
+    process.on('uncaughtException', function (err) {
+        console.log('Benchmark uncaughtException as pid: ' + process.pid);
+        console.log(err);
+    });
+
+    process.on('SIGINT', function () {
+        clear();
+        process.exit(0);
     });
 
 }());
