@@ -47,8 +47,8 @@
         lodash = require('lodash'),
         args = process.argv.slice(2), // index, server
         SocketClient = require('socket.io-client'),
-        Clock = require(b + 'lib/smile/socketio-benchmark/clock'),
-        logger = require(b + 'lib/smile/socketio-benchmark/logger');
+        Clock = require(b + 'lib/smile/core/clock'),
+        logger = require(b + 'lib/smile/core/logger');
 
     /** -----------------------------------------------
 

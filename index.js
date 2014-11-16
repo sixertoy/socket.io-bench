@@ -1,4 +1,4 @@
-/*global require, process, console, module */
+/*global GLOBAL, require, process, console, module */
 (function () {
 
     'use strict';
@@ -40,8 +40,8 @@
         FS = require('fs'),
         PKG = require('./package.json'),
         Commander = require('commander'),
-        logger = require('./lib/smile/socketio-benchmark/logger'),
-        Benchmark = require('./lib/smile/socketio-benchmark/benchmark');
+        logger = require('./lib/smile/core/logger'),
+        Benchmark = require('./lib/smile/socket.io/benchmark');
 
     // recuperation des arguments
     // de la console
@@ -51,6 +51,7 @@
         .option('-w, --worker <n>', 'Number of socket client, Default to 1', parseInt)
         .option('-c, --clients <n>', 'Concurent clients/packets, Default to 20', parseInt)
         .option('-p, --packets <n>', 'Number of packets of clients, Default to 5 (100 connections)', parseInt)
+        .option('-d, --debug [value]', 'Debug mode')
         .parse(process.argv);
 
     if (!Commander.args.length) {
@@ -72,6 +73,7 @@
         };
 
         // affichage user friendly
+        logger.debugMode(Commander.debug);
         logger.head('Socket.io Benchmark v' + Commander.version());
         logger.info('Launch bench with ' + options.clients + ' concurent clients/' + options.packets + ' packets.');
         logger.info((options.clients * options.packets) + 'Persistents connection will be etablished');

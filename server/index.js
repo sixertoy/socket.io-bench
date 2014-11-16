@@ -42,7 +42,7 @@
         lTimeout = null, // timeout de users connected
         usersConnected = 0,
         usersPerSecond = 0,
-        logger = require('./../lib/smile/socketio-benchmark/logger'),
+        logger = require('./../lib/smile/core/logger'),
         Sequelize = require('sequelize'),
         PKG = require('./package.json'),
         Commander = require('commander'),
@@ -57,9 +57,11 @@
         .version(PKG.version)
         .usage('[options]')
         .option('-p, --port <n>', 'Listening port, default 3000', parseInt)
+        .option('-d, --debug [value]', 'Debug mode')
         .parse(process.argv);
 
     port = Commander.port || 3000;
+    logger.debugMode(Commander.debug);
 
     app.get('/', function (req, res) {
         res.send('<h1>Hello World</h1>');
