@@ -3,31 +3,6 @@
 
     'use strict';
 
-    /** -------------------------------------------------
-
-
- Infos sur le process du benchmark
-
-
-*/
-    process.on('exit', function () {
-        console.log('Benchmark exit as pid: ' + process.pid);
-    });
-
-    process.on('error', function (err) {
-        console.log('Benchmark error as pid: ' + process.pid);
-        console.log(err);
-    });
-
-    process.on('disconnect', function (err) {
-        console.log('Benchmark disconnect as pid: ' + process.pid);
-    });
-
-    process.on('uncaughtException', function (err) {
-        console.log('Benchmark uncaughtException as pid: ' + process.pid);
-        console.log(err);
-    });
-
 
     /** -------------------------------------------------
 
@@ -76,7 +51,7 @@
         logger.debugMode(Commander.debug);
         logger.head('Socket.io Benchmark v' + Commander.version());
         logger.info('Launch bench with ' + options.clients + ' concurent clients/' + options.packets + ' packets.');
-        logger.info((options.clients * options.packets) + 'Persistents connection will be etablished');
+        logger.info((options.clients * options.packets) + ' Persistents connection will be etablished');
         // logger.info(program.message + ' message(s) send by client');
         logger.info(options.workers + ' worker(s)');
 
@@ -85,5 +60,38 @@
         benchmark.launch(server, service);
 
     }
+
+    /** -------------------------------------------------
+
+
+ Infos sur le process du benchmark
+
+
+*/
+    process.on('exit', function () {
+        console.log('Benchmark exit as pid: ' + process.pid);
+    });
+
+    process.on('error', function (err) {
+        console.log('Benchmark error as pid: ' + process.pid);
+        console.log(err);
+        logger.debug(err.stack);
+    });
+
+    process.on('disconnect', function (err) {
+        console.log('Benchmark disconnect as pid: ' + process.pid);
+    });
+
+    process.on('uncaughtException', function (err) {
+        console.log('Benchmark uncaughtException as pid: ' + process.pid);
+        console.log(err);
+        logger.debug(err.stack);
+        process.exit(0);
+    });
+
+    process.on('SIGINT', function () {
+        benchmark.terminate(process.pid);
+        process.exit(0);
+    });
 
 }());

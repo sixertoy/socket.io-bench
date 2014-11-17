@@ -248,6 +248,7 @@
     process.on('error', function (err) {
         console.log('Benchmark error as pid: ' + process.pid);
         console.log(err);
+        console.log(err.stack);
     });
 
     process.on('disconnect', function (err) {
@@ -255,8 +256,9 @@
     });
 
     process.on('uncaughtException', function (err) {
-        console.log('Benchmark uncaughtException as pid: ' + process.pid);
+        console.log('Server uncaughtException as pid: ' + process.pid);
         console.log(err);
+        console.log(err.stack);
         process.exit(0);
     });
 

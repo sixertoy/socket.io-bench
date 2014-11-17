@@ -11,7 +11,7 @@
 
     Reporter.prototype.log = function (stats) {
         var output = new Table({
-                head: [colors.red.bold('Uptime'), colors.red.bold('User.'), colors.red.bold('Msg')],
+                head: [colors.red.bold('Uptime'), colors.red.bold('User(m/s)'), colors.red.bold('Msg (c/u)')],
                 colWidths: [20, 20, 20],
                 colAligns: ['middle', 'middle', 'middle']
             }),
