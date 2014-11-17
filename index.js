@@ -3,7 +3,6 @@
 
     'use strict';
 
-
     /** -------------------------------------------------
 
  Benchmark
@@ -15,8 +14,8 @@
         FS = require('fs'),
         PKG = require('./package.json'),
         Commander = require('commander'),
-        logger = require('./lib/smile/core/logger'),
-        Benchmark = require('./lib/smile/socket.io/benchmark');
+        logger = require('./thirdparty/smile/core/logger'),
+        Benchmark = require('./app/smile/socket.io/benchmark');
 
     // recuperation des arguments
     // de la console

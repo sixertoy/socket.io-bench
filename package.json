@@ -1,43 +1,43 @@
 {
-    "name": "socket.io-bench",
-    "version": "0.1.0",
-    "description": "Socket.io Benchmarkt",
-    "main": "index.js",
-    "scripts": {
-        "start": "node index.js",
-        "test": ""
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/malas34/socket.io-bench"
-    },
-    "keywords": [
+  "name": "socket.io-bench",
+  "version": "0.1.0",
+  "description": "Socket.io Benchmarkt",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": ""
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/malas34/socket.io-bench"
+  },
+  "keywords": [
     "socket",
     "websocket",
     "socket.io",
     "bench",
     "benchmarkt"
   ],
-    "engines": {
-        "node": ">= 0.10.0"
-    },
-    "author": "Matthieu Lassalvy",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/malas34/socket.io-bench/issues"
-    },
-    "homepage": "https://github.com/malas34/socket.io-bench",
-    "dependencies": {
-        "socket.io": "^1.2.0",
-        "commander": "^2.5.0",
-        "socket.io-client": "^1.2.0",
-        "lodash": "^2.4.1",
-        "colors": "^1.0.3",
-        "cli-table": "^0.3.1"
-    },
-    "devDependencies": {
-        "grunt": "~0.4.2",
-        "grunt-contrib-jshint": "~0.7.2",
-        "grunt-jasmine-node": "https://github.com/malas34/grunt-jasmine-node/archive/jasmine-node_v1.14.tar.gz"
-    }
+  "engines": {
+    "node": ">= 0.10.0"
+  },
+  "author": "Matthieu Lassalvy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/malas34/socket.io-bench/issues"
+  },
+  "homepage": "https://github.com/malas34/socket.io-bench",
+  "dependencies": {
+    "cli-table": "^0.3.1",
+    "colors": "^1.0.3",
+    "commander": "^2.5.0",
+    "lodash": "^2.4.1",
+    "socket.io": "^1.2.0",
+    "socket.io-client": "^1.2.0"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.2",
+    "grunt-contrib-jshint": "~0.7.2",
+    "grunt-jasmine-node": "https://github.com/malas34/grunt-jasmine-node/archive/jasmine-node_v1.14.tar.gz"
+  }
 }
