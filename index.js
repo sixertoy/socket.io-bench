@@ -27,7 +27,6 @@
         .option('-q, --query [value]', 'Client custom http query')
         .option('-p, --packets <n>', 'Number of packets of clients, Default to 5 (100 connections)', parseInt)
         .option('-d, --debug [value]', 'Debug mode')
-
         .parse(process.argv);
 
     if (!Commander.args.length) {
