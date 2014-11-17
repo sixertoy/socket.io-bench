@@ -25,6 +25,7 @@
         .usage('[options] <server>')
         .option('-w, --worker <n>', 'Number of socket client, Default to 1', parseInt)
         .option('-c, --clients <n>', 'Concurent clients/packets, Default to 20', parseInt)
+        .option('-q, --query [value]', 'Client custom http query')
         .option('-p, --packets <n>', 'Number of packets of clients, Default to 5 (100 connections)', parseInt)
         .option('-d, --debug [value]', 'Debug mode')
         .parse(process.argv);
@@ -41,6 +42,7 @@
 
         // definition des options du benchmark
         options = {
+            query: Commander.query || '',
             workers: Commander.worker || 1,
             packets: Commander.packets || 5,
             messages: Commander.message || 0,
