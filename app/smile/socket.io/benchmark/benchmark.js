@@ -1,15 +1,15 @@
 /*jslint plusplus: true */
-/*global require, module, process */
+/*global require, include, module, process */
 (function () {
 
     'use strict';
 
     var defaults,
         Path = require('path'),
-        Clock = require('./../../core/clock'),
         lodash = require('lodash'),
         CP = require('child_process'),
-        Reporter = require('./reporter');
+        Reporter = require('./reporter'),
+        Clock = include('lib/smile/core/clock');
 
     // definition des valeurs
     // par defaut du module

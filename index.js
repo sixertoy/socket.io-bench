@@ -1,7 +1,9 @@
-/*global GLOBAL, require, process, console, module */
+/*global global, require, process, console, module */
 (function () {
 
     'use strict';
+
+    global.include = require('smnolde').include;
 
     /** -------------------------------------------------
 
@@ -14,7 +16,7 @@
         FS = require('fs'),
         PKG = require('./package.json'),
         Commander = require('commander'),
-        logger = require('./thirdparty/smile/core/logger'),
+        logger = require('./lib/smile/core/logger'),
         Benchmark = require('./app/smile/socket.io/benchmark');
 
     // recuperation des arguments

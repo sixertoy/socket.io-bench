@@ -17,6 +17,7 @@ module.exports = function (grunt) {
                 match: '.',
                 forceExit: false,
                 extensions: 'js',
+                keepRunner: true,
                 specNameMatcher: 'test',
                 includeStackTrace: false,
                 jUnit: {
@@ -27,10 +28,27 @@ module.exports = function (grunt) {
                 }
             },
             all: ['tests/']
+        },
+        bump: {
+            options: {
+                files: ['package.json'],
+                updateConfigs: [],
+                commit: false,
+                commitMessage: 'Release v%VERSION%',
+                commitFiles: ['package.json'],
+                createTag: false,
+                tagName: 'v%VERSION%',
+                tagMessage: 'Version %VERSION%',
+                push: false,
+                pushTo: 'upstream',
+                gitDescribeOptions: '--tags --always --abbrev=1 --dirty=-d',
+                globalReplace: false
+            }
         }
     });
 
     // These plugins provide necessary tasks.
+    grunt.loadNpmTasks('grunt-bump');
     grunt.loadNpmTasks('grunt-jasmine-node');
     grunt.loadNpmTasks('grunt-contrib-jshint');
 
